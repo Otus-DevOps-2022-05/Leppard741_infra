@@ -3,7 +3,8 @@
         "service_account_key_file": "",
         "folder_id": "",
         "source_image_family": "",
-        "ssh_username": ""
+        "ssh_username": "",
+        "image_family": ""
     },
     "builders": [
         {
@@ -11,22 +12,22 @@
             "service_account_key_file": "{{user `service_account_key_file`}}",
             "folder_id": "{{user `folder_id`}}",
             "source_image_family": "{{user `source_image_family`}}",
-            "image_name": "reddit-base-{{timestamp}}",
-            "image_family": "reddit-base",
+            "image_name": "reddit-full-{{timestamp}}",
+            "image_family": "{{user `image_family`}}",
             "ssh_username": "{{user `ssh_username`}}",
             "use_ipv4_nat": "true",
             "platform_id": "standard-v1"
         }
     ],
     "provisioners": [
-        {
-            "type": "shell",
-            "script": "/home/Leppard741_infra/packer/scripts/install_ruby.sh",
-            "execute_command": "sudo {{.Path}}"
+ { 
+            "type": "file",
+            "source": "/home/Leppard741_infra/packer/Files/reddit.service",
+            "destination": "/tmp/reddit.service"
         },
         {
             "type": "shell",
-            "script": "/home/Leppard741_infra/packer/scripts/install_mongodb.sh",
+            "script": "/home/Leppard741_infra/packer/Files/startup_script.sh",
             "execute_command": "sudo {{.Path}}"
         }
     ]
