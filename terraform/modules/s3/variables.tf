@@ -29,9 +29,18 @@ variable "app_servers_count" {
 }
 variable app_disk_image {
   description = "Disk image for reddit app"
-  default = "reddit-ruby"
+  default     = "reddit-ruby"
 }
 variable db_disk_image {
-  description = "Disk image for reddit app"
-  default = "reddit-mongo"
+  description = "Disk image for reddit db"
+  default     = "reddit-mongo"
+}
+variable "environment" {
+  description = "stage,prod"
+}
+variable "access_key" {
+  description = "access key backet"
+}
+variable "secret_key" {
+  description = "secret key backet"
 }

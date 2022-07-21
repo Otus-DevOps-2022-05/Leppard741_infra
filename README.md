@@ -487,3 +487,136 @@ resource "yandex_lb_network_load_balancer" "lb" {
     }
 В итоге получаем более комплексный подход в создании одинаковых инстансов в связке load balancer.
 
+
+## Terraform-2 Homework
+
+**Дополнительное задание №1** 
+Настройка хранения стейт файла в удаленном бекенде (remote  
+backends) для окружений  stage  и  prod
+
+
+Создаём бакет для хранения состояния `terraform` **(.tfstate)**, перед созданием бакета был создан создан сервисный аккаунт, присвоена роль и сгенерирован ключ. После выполнения команды `yc iam access-key list --service-account-name ****` необходимо сохранить access и secret key после чего задать их в качетсве отдельных переменных.
+Создание бакета выведено отдельным модулем
+
+    resource "yandex_storage_bucket" "backend-s3" {
+      access_key = var.access_key
+      secret_key = var.secret_key
+      bucket = "backend-s3"
+    }
+
+Для обоих сред `stage` и `prod` создаём файл с описанием бэкенда (backend.tf):
+
+    terraform {
+      backend "s3" {
+        endpoint   = "storage.yandexcloud.net"
+        bucket     = "backend-s3"
+        region     = "ru-central1"
+        key        = "stage.tfstate"
+        access_key = "место для ключа"
+        secret_key = "место для секрета"
+    
+        skip_region_validation      = true
+        skip_credentials_validation = true
+      }
+    }
+
+Удаляем файлы состояния `.tfstate`после чего проводим инициализацию `terraform init` и применение изменений `terraform apply`. После создания инстансов видно, что файл `.tfstate` не появился так как теперь он храниться хранится в бакете `(Object Storage)`. При одновременном выполнении заданий из разных папок появлялась ошибка создания ресурса с одинаковым именем.
+
+----------
+
+**Дополнительное задание №2**
+
+Добавить необходимые provisioner в модули для деплоя и работы приложения. Файлы, используемые в provisioner, должны находится в директории модуля
+
+В папке модуля `app` создадим директорию `files`, переносим в неее ранее созданные `puma.service` `deploy.sh`. 
+В `main.tf` модуля возвращаем секции `connection` и `provisioner` .
+
+    ...
+      connection {
+        type        = "ssh"
+        host        = yandex_compute_instance.app.network_interface.0.nat_ip_address
+        user        = "ubuntu"
+        agent       = false
+        private_key = file(var.private_key_path)
+      }
+    
+       provisioner "file" {
+        content     = templatefile("/home/Leppard741_infra/terraform/modules/app/files/puma.ser>
+        destination = "/tmp/puma.service"
+      }
+      provisioner "remote-exec" {
+        script = "/home/Leppard741_infra/terraform/modules/app/files/deploy.sh"
+      }
+    ...
+
+В файл `variables.tf` добавим переменную указывающую на закрытый  ключ и внесем изменения в `main.tf` окружения `stage`:
+
+    ...
+    module "app" {
+      source            = "../modules/app"
+      public_key_path   = var.public_key_path
+      private_key_path   = var.private_key_path
+      app_disk_image_id = var.app_disk_image_id
+      subnet_id         = var.subnet_id
+      zone              = var.zone
+      environment       = var.environment
+    }
+    ...
+
+Применяем конфигурацию `terraform apply`, переходим в браузер по адресу app инстанса, порт 9292 доступен однако нет связи с mongodb так как она теперь на отдельном инстансе.
+Для того что бы это исправить создаем .tftpl файл со следущим содержимым вместо ранее используемого юнит файла  модуля `app`
+
+    [Unit]
+    Description=Puma HTTP Server
+    After=network.target
+    
+    [Service]
+    Type=simple
+    User=ubuntu
+    WorkingDirectory=/home/ubuntu/reddit
+    ExecStart=/bin/bash -lc 'puma'
+    Restart=always
+    Environment=DATABASE_URL=${MONGODB_DATABASE_URL}
+    
+    [Install]
+    WantedBy=multi-user.target
+
+Добавляем переменную в `variables.tf` модуля `app`:
+
+    variable "database_ip" {
+      description = "IP address of Mongodb server"
+    }
+
+Изменим секцию provisioner в `main.tf` модуля `app`:
+
+       provisioner "file" {
+        content     = templatefile("/home/Leppard741_infra/terraform/modules/app/files/puma.ser>
+        destination = "/tmp/puma.service"
+      }
+
+Добавим `database_ip` в  `main.tf` окружения `stage`:
+
+    module "app" {
+      source            = "../modules/app"
+      public_key_path   = var.public_key_path
+      private_key_path  = var.private_key_path
+      app_disk_image_id = var.app_disk_image_id
+      subnet_id         = var.subnet_id
+      zone              = var.zone
+      environment       = var.environment
+      database_ip       = module.db.external_ip_address_db
+    }
+
+Далее для того что бы mongodb прослушивала все доступные интерфейсы нужно изменить значение "bind_ip = 127.0.0.1" на "bind_ip = 0.0.0.0". для этого сделаем скрипт и привяжем его к провиженеру + добавление переменной закрытого ключа в секции `connection` .
+Тело скрипта:
+
+    #!/bin/sh
+    sudo sed -i s/127.0.0.1/0.0.0.0/ /etc/mongodb.conf
+    sudo systemctl restart mongodb
+
+Провиженер `main.tf` модуля `db`:
+
+       provisioner "remote-exec" {
+        script = "/home/Leppard741_infra/terraform/modules/db/files/config_mongodb.sh"
+      }
+После чего выполняем terraform apply и получаем нужный результат = рабочее приложение с выведенной отдельно mongodb.
