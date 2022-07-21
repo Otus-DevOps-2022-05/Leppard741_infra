@@ -35,3 +35,9 @@ variable db_disk_image {
   description = "Disk image for reddit app"
   default = "reddit-mongo"
 }
+variable "database_ip" {
+  description = "IP address of Mongodb server"
+}
+variable "environment" {
+  description = "stage, prod"
+}
