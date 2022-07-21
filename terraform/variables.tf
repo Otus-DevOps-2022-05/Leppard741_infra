@@ -28,8 +28,7 @@ variable "app_servers_count" {
   default     = 1
 }
 variable "app_disk_image_id" {
-  description = "Disk image for reddit app"
-  default = "reddit-ruby"
+  description = "Disk image id for VM (app)"
 }
 variable "db_disk_image_id" {
   description = "Disk image id for VM (db)"
