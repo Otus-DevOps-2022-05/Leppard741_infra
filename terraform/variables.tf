@@ -32,8 +32,7 @@ variable "app_disk_image_id" {
   default = "reddit-ruby"
 }
 variable "db_disk_image_id" {
-  description = "Disk image for reddit app"
-  default = "reddit-mongo"
+  description = "Disk image id for VM (db)"
 }
 variable "database_ip" {
   description = "IP address of Mongodb server"
