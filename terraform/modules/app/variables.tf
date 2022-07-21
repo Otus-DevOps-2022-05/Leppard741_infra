@@ -4,7 +4,7 @@ variable "public_key_path" {
 variable "subnet_id" {
   description = "Subnet"
 }
-variable app_disk_image {
+variable "app_disk_image" {
   description = "Disk image for reddit app"
   default = "reddit-ruby"
 }
