@@ -10,7 +10,7 @@ provider "yandex" {
 // Configure the modules
 
 module "app" {
-  source          = "/home/Leppard741_infra/terraform/modules/app"
+  source          = "../modules/app"
   private_key_path = var.private_key_path
   public_key_path = var.public_key_path
   app_disk_image  = var.app_disk_image
@@ -21,7 +21,7 @@ module "app" {
 }
 
 module "db" {
-  source          = "/home/Leppard741_infra/terraform/modules/db"
+  source          = "../modules/db"
   private_key_path = var.private_key_path
   public_key_path = var.public_key_path
   db_disk_image   = var.db_disk_image
