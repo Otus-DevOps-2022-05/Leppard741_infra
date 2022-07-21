@@ -13,7 +13,6 @@ provider "yandex" {
   source            = "./modules/app"
   public_key_path   = var.public_key_path
   private_key_path  = var.private_key_path
-  app_disk_image_id = var.app_disk_image
   subnet_id         = module.subnet.app_subnet_id
   zone              = var.zone
   environment       = var.environment
