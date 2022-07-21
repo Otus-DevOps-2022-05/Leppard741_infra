@@ -42,3 +42,9 @@ variable "environment" {
 variable "ipv4_subnet_blocks" {
   description = "Address blocks for subnet"
 }
+variable "access_key" {
+  description = "access key backet"
+}
+variable "secret_key" {
+  description = "secret key backet"
+}
