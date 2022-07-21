@@ -41,3 +41,6 @@ variable "database_ip" {
 variable "environment" {
   description = "stage, prod"
 }
+variable "ipv4_subnet_blocks" {
+  description = "Address blocks for subnet"
+}
