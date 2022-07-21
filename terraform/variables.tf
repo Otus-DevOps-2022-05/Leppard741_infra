@@ -27,11 +27,11 @@ variable "app_servers_count" {
   description = "app_servers_count"
   default     = 1
 }
-variable "app_disk_image" {
+variable "app_disk_image_id" {
   description = "Disk image for reddit app"
   default = "reddit-ruby"
 }
-variable "db_disk_image" {
+variable "db_disk_image_id" {
   description = "Disk image for reddit app"
   default = "reddit-mongo"
 }
