@@ -30,7 +30,7 @@ resource "yandex_compute_instance" "db" {
   }
 
    provisioner "remote-exec" {
-    script = "../files/config_mongodb.sh"
+    script = "${path.module}/files/config_mongodb.sh"
   }
 
   metadata = {
