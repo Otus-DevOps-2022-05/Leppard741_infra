@@ -1,0 +1,12 @@
+cloud_id                 = "qqqqqqqqqqqqqqqqqqqq"
+folder_id                = "wwwwwwwwwwwwwwwwwwww"
+zone                     = "ru-central1-h"
+image_id                 = "eeeeeeeeeeeeeeeeeeee"
+public_key_path          = "~/.ssx/ubuntu.pub"
+subnet_id                = "uuuuuuuuuuuuuuuuuuuu"
+service_account_key_file = "/home/service.json"
+private_key_path         = "~/.ssx/ubuntu"
+app_servers_count        = 4
+app_disk_image           = "oooooooooooooooooooo"
+db_disk_image            = "mmmmmmmmmmmmmmmmmmmm"
+environment              = "stage"
