@@ -33,7 +33,7 @@ resource "yandex_compute_instance" "app" {
   }
 
    provisioner "file" {
-    content     = ../files/puma.service.tftpl", { MONGODB_DATABASE_URL = var.database_ip })
+    content     = templatefile("../files/puma.service.tftpl", { MONGODB_DATABASE_URL = var.database_ip })
     destination = "/tmp/puma.service"
   }
   provisioner "remote-exec" {
