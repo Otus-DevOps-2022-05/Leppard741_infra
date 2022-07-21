@@ -30,7 +30,7 @@ resource "yandex_compute_instance" "db" {
   }
 
    provisioner "remote-exec" {
-    script = "/home/Leppard741_infra/terraform/modules/db/files/config_mongodb.sh"
+    script = "../files/config_mongodb.sh"
   }
 
   metadata = {
