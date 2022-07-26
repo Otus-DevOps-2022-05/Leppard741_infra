@@ -27,24 +27,14 @@ variable "app_servers_count" {
   description = "app_servers_count"
   default     = 1
 }
-variable "app_disk_image_id" {
-  description = "Disk image id for VM (app)"
+variable app_disk_image {
+  description = "Disk image for reddit app"
+  default     = "reddit-ruby"
 }
-variable "db_disk_image_id" {
-  description = "Disk image id for VM (db)"
-}
-variable "database_ip" {
-  description = "IP address of Mongodb server"
+variable db_disk_image {
+  description = "Disk image for reddit db"
+  default     = "reddit-mongo"
 }
 variable "environment" {
-  description = "stage, prod"
-}
-variable "ipv4_subnet_blocks" {
-  description = "Address blocks for subnet"
-}
-variable "access_key" {
-  description = "access key backet"
-}
-variable "secret_key" {
-  description = "secret key backet"
+  description = "stage,prod"
 }
