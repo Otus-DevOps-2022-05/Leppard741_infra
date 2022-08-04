@@ -620,3 +620,125 @@ backends) для окружений  stage  и  prod
         script = "/home/Leppard741_infra/terraform/modules/db/files/config_mongodb.sh"
       }
 После чего выполняем terraform apply и получаем нужный результат = рабочее приложение с выведенной отдельно mongodb.
+
+## Ansible-1 Homework
+
+**Задание 1** 
+Теперь выполните  `ansible  app  -m  command  -a  'rm  -rf  ~/reddit'`  
+и проверьте еще раз выполнение плейбука. Что изменилось и почему?
+
+**Решение** - Команда удалит директорию и вложенные файлы репозитория приложения. После запуска `ansible-playbook clone.yaml` репозиторий будет заново клонирован что отразиться в статусе выполнения плейбука.
+
+----------
+
+**Задание 2**
+ Для описания инвентори Ansible использует форматы файлов INI и YAML. Также поддерживается формат JSON. При этом, Ansible поддерживает две различных схемы JSON-inventory: одна является прямым отображением YAML-формата (можно сделать через конвертер YAML <-> JSON), а другая используется для динамического inventory. С небольшими ухищрениями можно заставить Ansible использовать вторую схему и для статических JSON-файлов. Попробуем это сделать...
+
+1.  Ознакомьтесь с [Динамическое инвентори в Ansible](https://nklya.medium.com/%D0%B4%D0%B8%D0%BD%D0%B0%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5-%D0%B8%D0%BD%D0%B2%D0%B5%D0%BD%D1%82%D0%BE%D1%80%D0%B8-%D0%B2-ansible-9ee880d540d6).
+2.  Создайте файл inventory.json в формате, описанном в п.1 для нашей ya.cloud-инфраструктуры и скрипт для работы с ним.
+3.  Добейтесь успешного выполнения команды ansible all -m ping и опишите шаги в README.
+4.  Добавьте параметры в файл ansible.cfg для работы с инвентори в формате JSON.
+5.  Если вы разобрались с отличиями схем JSON для динамического и статического инвентори, также добавьте описание в README
+
+**Решение** - Динамическое инвентори - это скрипт, который получает информацию о хостах из какого-то источника и отдаёт её в формате JSON.
+
+Содержимое **inventory.json** :
+
+    {
+        "all": {
+            "children": {
+                "app": {
+                    "hosts": {
+                        "appserver": {
+                            "ansible_host": "62.84.114.91"
+                        }
+                    }
+                },
+                "db": {
+                    "hosts": {
+                        "dbserver": {
+                            "ansible_host": "62.84.117.243"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+Для работы динамического инвентори нужно вернуть список хостов и блок `_meta`, в котором указаны переменные хостов. 
+В качестве примера создадим файл источник для скрипта динамического инвентори **inventory-src.json**:
+
+    {
+        "app": {
+            "hosts": ["appserver"]
+        },
+        "db": {
+            "hosts": ["dbserver"]
+        },
+        "_meta": {
+            "hostvars": {
+                "appserver": {
+                    "ansible_host": "62.84.114.91"
+                },
+                "dbserver": {
+                    "ansible_host": "62.84.117.243"
+                }
+            }
+        }
+    }
+
+Далее создаем скрипт , который будет передавать ansible сформированный файл. 
+Содержимое скрипта `dynamic-inventory.sh`:
+
+    #!/bin/sh
+    
+    cat inventory-source.json
+
+Проверяем работу "динамического" инвентори:
+
+    # ansible -i ./dynamic-inventory.sh all -m ping
+    dbserver | SUCCESS => {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/bin/python3"
+        },
+        "changed": false,
+        "ping": "pong"
+    }
+    appserver | SUCCESS => {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/bin/python3"
+        },
+        "changed": false,
+        "ping": "pong"
+    }
+
+Меняем конфигурацию `ansible.cfg`
+
+    [defaults]
+    inventory = ./dynamic-inventory.sh
+    remote_user = ubuntu
+    private_key_file = ~/.ssh/ubuntu
+    host_key_checking = False
+    retry_files_enabled = False
+
+Проверяем работу
+
+    # ansible all -m ping
+    appserver | SUCCESS => {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/bin/python3"
+        },
+        "changed": false,
+        "ping": "pong"
+    }
+    dbserver | SUCCESS => {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/bin/python3"
+        },
+        "changed": false,
+        "ping": "pong"
+    }
+На выходе получаем скрипт для с динамическим инвентори.
