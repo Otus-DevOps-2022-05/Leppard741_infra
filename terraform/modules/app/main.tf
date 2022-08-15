@@ -9,15 +9,21 @@ resource "yandex_compute_instance" "app" {
     memory = 2
   }
 
+  network_interface {
+    subnet_id = var.subnet_id
+    nat = true
+  }
+
+#  boot_disk {
+#    initialize_params {
+#      image_id = var.image_id
+#    }
+#  }
+
   boot_disk {
     initialize_params {
       image_id = var.app_disk_image
     }
-  }
-
-  network_interface {
-    subnet_id = var.subnet_id
-    nat = true
   }
 
   metadata = {
@@ -32,11 +38,11 @@ resource "yandex_compute_instance" "app" {
     private_key = file(var.private_key_path)
   }
 
-  provisioner "file" {
-    content     = templatefile("${path.module}/files/puma.service.tftpl", { MONGODB_DATABASE_URL = var.database_ip })
-    destination = "/tmp/puma.service"
-  }
-  provisioner "remote-exec" {
-    script = "${path.module}/files/deploy.sh"
-  }
+#  provisioner "file" {
+#    content     = templatefile("${path.module}/files/puma.service.tftpl", { MONGODB_DATABASE_URL = var.database_ip })
+#    destination = "/tmp/puma.service"
+#  }
+#  provisioner "remote-exec" {
+#    script = "${path.module}/files/deploy.sh"
+#  }
 }

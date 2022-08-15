@@ -11,20 +11,13 @@
             "service_account_key_file": "{{user `service_account_key_file`}}",
             "folder_id": "{{user `folder_id`}}",
             "source_image_family": "{{user `source_image_family`}}",
-            "image_name": "reddit-ruby-{{timestamp}}",
-            "image_family": "reddit-ruby",
+            "image_name": "reddit-base-{{timestamp}}",
+            "image_family": "reddit-base",
             "ssh_username": "{{user `ssh_username`}}",
             "use_ipv4_nat": "true",
             "subnet_id": "e9bl8e8hr02e96rkvnoj",
             "zone": "ru-central1-a",
             "platform_id": "standard-v1"
-        }
-    ],
-    "provisioners": [
-        {
-            "type": "ansible",
-            "use_proxy": false,
-            "playbook_file": "../ansible/packer_app.yml"
         }
     ]
 }

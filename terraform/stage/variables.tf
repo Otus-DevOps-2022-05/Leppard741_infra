@@ -35,3 +35,6 @@ variable db_disk_image {
 variable "environment" {
   description = "stage,prod"
 }
+#variable "image_id" {
+#  description = "clear image"
+#}
