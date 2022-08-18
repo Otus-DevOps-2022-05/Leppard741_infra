@@ -1,0 +1,19 @@
+- name: Install dependency for Reddit
+  hosts: all
+  become: true
+  tasks:
+    - name: Install 
+      apt:
+        name: ['apt-transport-https', 'ca-certificates', 'ruby-full', 'ruby-bundler', 'build-essential', 'git']
+        state: present
+        update_cache: yes
+      retries: 5
+      delay: 20
+
+    - name: Remove packages
+      apt:
+        autoclean: yes
+
+    - name: Remove dependencies
+      apt:
+        autoremove: yes

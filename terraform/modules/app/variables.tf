@@ -18,6 +18,9 @@ variable "zone" {
 variable "private_key_path" {
   description = "path to private key"
 }
-variable "database_ip" {
-  description = "IP address of Mongodb server"
-}
+#variable "database_ip" {
+#  description = "IP address of Mongodb server"
+#}
+#variable "image_id" {
+#   description = "clear image"
+#}
