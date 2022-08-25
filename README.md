@@ -1,17 +1,19 @@
-
-  GNU nano 6.2                                                                                                                                                                                                                                                                                                                                                                                                          README.md *                                                                                                                                                                                                                                                                                                                                                                                                                 
 # Leppard741_infra
 Leppard741 Infra repository OTUS DevOps 2022
-## Instance details
+
+<details><summary>Instance details</summary> 
 bastion_IP = 51.250.88.101
 someinternalhost_IP = 10.128.0.4
-## YC deploy app details
+</details>
+
+<details><summary>YC deploy app details</summary> 
 testapp_IP = 51.250.87.119
 testapp_port = 9292
+</details>
 
-## Packer homework
+<details><summary>Packer</summary>
 
-### 1) Параметризируйте созданный вами шаблон.
+   ### 1) Параметризируйте созданный вами шаблон.
 
 1.1) Необходимо создать файл **variables.json** и задать значения переменным в качестве примера показан и закоммичен **variables.json.examples**:
 
@@ -133,8 +135,9 @@ testapp_port = 9292
     --zone ru-central1-b
 
 На выходе получаем инстанс с работающим приложением reddit
+</details>
 
-## Terraform 1 Homework
+<details><summary>Terraform 1</summary>
 
 ### 1) Самостоятельные задания
 #### 1.1) Определите input переменную для приватного ключа, использующегося в определении подключения для провижинеров (connection)
@@ -487,8 +490,9 @@ resource "yandex_lb_network_load_balancer" "lb" {
     }
 В итоге получаем более комплексный подход в создании одинаковых инстансов в связке load balancer.
 
+</details>
 
-## Terraform-2 Homework
+<details><summary>Terraform 2</summary>
 
 **Дополнительное задание №1** 
 Настройка хранения стейт файла в удаленном бекенде (remote  
@@ -621,7 +625,9 @@ backends) для окружений  stage  и  prod
       }
 После чего выполняем terraform apply и получаем нужный результат = рабочее приложение с выведенной отдельно mongodb.
 
-## Ansible-1 Homework
+</details>
+
+<details><summary>Ansible 1</summary>
 
 **Задание 1** 
 Теперь выполните  `ansible  app  -m  command  -a  'rm  -rf  ~/reddit'`  
@@ -742,3 +748,254 @@ backends) для окружений  stage  и  prod
         "ping": "pong"
     }
 На выходе получаем скрипт для с динамическим инвентори.
+
+</details>
+
+<details><summary>Ansible 2</summary>
+
+
+**Задание со ⭐** Ansible на текущий момент (07.2020) из коробки не умеет динамическую инвентаризацию в Yandex.Cloud. Нам нужно писать свои костыли, как в предыдущем ДЗ. Но если порыскать по репозиторию, то можно натолкнуться на вот [PR](https://github.com/ansible/ansible/pull/61722). Попробуйте использовать это решение для инвентаризации.
+
+**Решение**  Клонируем себе ветку репозитория, плагин находится по следующему адресу: `community.general/plugins/inventory/yc_compute.py`, переносим его в директорию хранения плагинов ansible - 
+
+    ~/.ansible/plugins/inventory
+    
+Для включения плагина, нужно добавить его в `ansible.cfg` и установить Yandex.SDK `pip3 install yandexcloud` :
+
+Из описания к плагину видно что управление происходит через yml файл, создаем его:
+`yc.yml`:
+
+    plugin: yc_compute
+    
+    folders:
+      - id***************
+    
+    auth_kind: serviceaccountfile
+    
+    service_account_file: "Путь до ключа"
+    
+    hostnames:
+      - fqdn
+    
+    compose:
+      ansible_host: network_interfaces[0].primary_v4_address.one_to_one_nat.address
+    
+    keyed_groups:
+      - key: labels['group']
+        prefix: ''
+        separator: ''
+        [defaults]
+        inventory = ./yc.yml
+        remote_user = ubuntu
+        private_key_file = ~/.ssh/ubuntu
+        host_key_checking = False
+        retry_files_enabled = False
+        
+        [inventory]
+        enable_plugins = yc_compute
+Добавлем все изменения в `ansible.cfg`
+
+    [defaults]
+    inventory = ./yc.yml
+    remote_user = ubuntu
+    private_key_file = ~/.ssh/ubuntu
+    host_key_checking = False
+    retry_files_enabled = False
+    
+    [inventory]
+    enable_plugins = yc_compute
+Выдача от комманды `ansible-inventory --list` должна показать активные хосты YC
+
+----------
+
+**Самостоятельное задание**
+
+1.  Заменить скрипты, используемые `packer` на плэйбуки `ansible`.
+2.  Заменить скрипты в секциях `provisioners` файлов конфигурации `packer` на `ansible`.
+
+**Решение** Содержимое плэйбука `packer_app.yml` :
+
+    - name: Install base for application deploy
+      hosts: all
+      become: true
+      tasks:
+        - name: Install packages for app base
+          apt:
+            name: ['apt-transport-https', 'ca-certificates', 'ruby-full', 'ruby-bundler', 'build-essential', 'git']
+            state: present
+            update_cache: yes
+          retries: 5
+          delay: 20
+    
+        - name: Remove useless packages from the cache
+          apt:
+            autoclean: yes
+    
+        - name: Remove dependencies that are no longer required
+          apt:
+            autoremove: yes
+
+Содержимое плэйбука`packer_db.yml`:
+
+    - name: Install base for database server
+      hosts: all
+      become: true
+      tasks:
+        - name: Install mongodb
+          apt:
+            name: mongodb
+            state: present
+            update_cache: yes
+          retries: 5
+          delay: 20
+    
+        - name: Remove useless packages from the cache
+          apt:
+            autoclean: yes
+    
+        - name: Remove dependencies that are no longer required
+          apt:
+            autoremove: yes
+    
+        - name: Enable mongodb service
+          systemd:
+            name: mongodb
+            enabled: yes
+
+Заменим `provisioners` с `shell` на `ansible`. 
+
+Содержимое `packer/app.json`:
+
+    {
+        "variables": {
+            "mv_service_account_key_file": "",
+            "mv_folder_id": "",
+            "mv_source_image_family": ""
+        },
+        "builders": [
+            {
+                "type": "yandex",
+                "service_account_key_file": "{{user `mv_service_account_key_file`}}",
+                "folder_id": "{{user `mv_folder_id`}}",
+                "source_image_family": "{{user `mv_source_image_family`}}",
+                "image_name": "reddit-app-{{timestamp}}",
+                "image_family": "reddit-app",
+                "ssh_username": "ubuntu",
+                "platform_id": "standard-v1",
+                "use_ipv4_nat": "true"
+            }
+        ],
+        "provisioners": [
+            {
+                "type": "ansible",
+                "use_proxy": false,
+                "playbook_file": "ansible/packer_app.yml"
+            }
+        ]
+    }
+
+Содержимое `packer/db.json`:
+
+    {
+        "variables": {
+            "mv_service_account_key_file": "",
+            "mv_folder_id": "",
+            "mv_source_image_family": ""
+        },
+        "builders": [
+            {
+                "type": "yandex",
+                "service_account_key_file": "{{user `mv_service_account_key_file`}}",
+                "folder_id": "{{user `mv_folder_id`}}",
+                "source_image_family": "{{user `mv_source_image_family`}}",
+                "image_name": "reddit-db-{{timestamp}}",
+                "image_family": "reddit-db",
+                "ssh_username": "ubuntu",
+                "platform_id": "standard-v1",
+                "use_ipv4_nat": "true"
+            }
+        ],
+        "provisioners": [
+            {
+                "type": "ansible",
+                "use_proxy": false,
+                "playbook_file": "ansible/packer_db.yml"
+            }
+        ]
+    }
+
+Командой `packer build -var-file=./packer/variables.json ./packer/app.json` и `packer build -var-file=./packer/variables.json ./packer/db.json` собираем образы и помощью полученных id образов собираем инстансы через terraform.
+
+Проверяем работу инвентори на наличие инстансов `ansible-inventory --list`и выполняем   `ansible-playbook site.yml`после отработки сервис reddit будет доступен.
+
+</details>
+
+<details><summary>Ansible 3</summary>
+
+**Самостоятельное задание**
+
+1) Добавьте в конфигурацию Terraform открытие 80 порта для инстанса приложения
+2) Добавьте вызов роли jdauphant.nginx в плейбук app.yml
+3) Примените плейбук site.yml для окружения stage и проверьте, что приложение теперь доступно на 80 порту
+
+Решение - Устанавливаем роль согласно указаниям в методичке:
+
+    ansible-galaxy install -r environments/stage/requirements.yml
+
+Согласно документации минимально необходимые переменные:
+
+    nginx_sites:
+      default:
+        - listen 80
+        - server_name "reddit"
+        - location / { proxy_pass http://127.0.0.1:9292; }
+
+Добавляем эти переменные в файлы `app` каждого окружения, пример stage:
+
+    db_host: 51.250.73.238
+    nginx_sites:
+      default:
+        - listen 80
+        - server_name "reddit"
+        - location / { proxy_pass http://127.0.0.1:9292; }
+
+Добавим роль в наш  `app.yml`и при необходимости добавляем директорию для хранения ролей в `ansible.cfg`
+
+    - name: Configure App
+      hosts: app
+      become: true
+    
+      roles:
+        - app
+        - jdauphant.nginx
+
+Выполняем команду, после успешного выполнения приложение будет доступно по порту 80
+
+    ansible-playbook playbooks/site.yml
+----------
+
+**Задание со**  ⭐: Работа с динамическим  инвентори
+
+
+Решение - Необходимо перенести в каталоги окружений `prod` и `stage` файл из предыдущего задания с динамическим инвентори `yc.yml`.
+Добавляем файл с ключом ключ от сервисный ключ в корень папки `ansible.cfg`, указываем использование плагина в `ansible.cfg`.
+
+    [defaults]
+    inventory = ./environments/stage/yc.yml
+    remote_user = ubuntu
+    private_key_file = ~/.ssh/ubuntu
+    host_key_checking = False
+    retry_files_enabled = False
+    roles_path = ./roles
+    vault_password_file = vault.key
+    
+    [diff]
+    always = True
+    context = 5
+    
+    [inventory]
+    enable_plugins = yc_compute
+
+Данный способ предполагает работу плейбуков с динамическим инвентори.
+
+</details>
