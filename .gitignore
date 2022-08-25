@@ -1,9 +1,12 @@
 /packer/variables.json
 /packer/service-keys/*.json
 /terraform/stage/service-keys/*.json
+/terraform/prod/service-keys/*.json
 *.tfstate
 *.tfstate.*.backup
 *.tfstate.backup
 *.tfvars
 .terraform/
 *.retry
+jdauphant.nginx
+vault.key

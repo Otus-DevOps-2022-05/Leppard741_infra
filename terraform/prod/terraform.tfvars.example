@@ -9,4 +9,4 @@ private_key_path         = "~/.ssx/ubuntu"
 app_servers_count        = 4
 app_disk_image           = "oooooooooooooooooooo"
 db_disk_image            = "mmmmmmmmmmmmmmmmmmmm"
-environment              = "prod"
+environment              = "stage"

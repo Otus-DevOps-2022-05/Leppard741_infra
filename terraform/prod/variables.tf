@@ -11,9 +11,6 @@ variable "zone" {
 variable "public_key_path" {
   description = "Public key path"
 }
-variable "image_id" {
-  description = "Image"
-}
 variable "subnet_id" {
   description = "Subnet"
 }
@@ -38,3 +35,6 @@ variable db_disk_image {
 variable "environment" {
   description = "stage,prod"
 }
+#variable "image_id" {
+#  description = "clear image"
+#}
