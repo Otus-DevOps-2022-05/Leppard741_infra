@@ -929,3 +929,74 @@ backends) для окружений  stage  и  prod
 Проверяем работу инвентори на наличие инстансов `ansible-inventory --list`и выполняем   `ansible-playbook site.yml`после отработки сервис reddit будет доступен.
 
 </details>
+
+
+<details><summary>Ansible 3</summary>
+
+**Самостоятельное задание**
+
+1) Добавьте в конфигурацию Terraform открытие 80 порта для инстанса приложения
+2) Добавьте вызов роли jdauphant.nginx в плейбук app.yml
+3) Примените плейбук site.yml для окружения stage и проверьте, что приложение теперь доступно на 80 порту
+
+Решение - Устанавливаем роль согласно указаниям в методичке:
+
+    ansible-galaxy install -r environments/stage/requirements.yml
+
+Согласно документации минимально необходимые переменные:
+
+    nginx_sites:
+      default:
+        - listen 80
+        - server_name "reddit"
+        - location / { proxy_pass http://127.0.0.1:9292; }
+
+Добавляем эти переменные в файлы `app` каждого окружения, пример stage:
+
+    db_host: 51.250.73.238
+    nginx_sites:
+      default:
+        - listen 80
+        - server_name "reddit"
+        - location / { proxy_pass http://127.0.0.1:9292; }
+
+Добавим роль в наш  `app.yml`и при необходимости добавляем директорию для хранения ролей в `ansible.cfg`
+
+    - name: Configure App
+      hosts: app
+      become: true
+    
+      roles:
+        - app
+        - jdauphant.nginx
+
+Выполняем команду, после успешного выполнения приложение будет доступно по порту 80
+
+    ansible-playbook playbooks/site.yml
+----------
+
+**Задание со**  ⭐: Работа с динамическим  инвентори
+
+
+Решение - Необходимо перенести в каталоги окружений `prod` и `stage` файл из предыдущего задания с динамическим инвентори `yc.yml`.
+Добавляем файл с ключом ключ от сервисный ключ в корень папки `ansible.cfg`, указываем использование плагина в `ansible.cfg`.
+
+    [defaults]
+    inventory = ./environments/stage/yc.yml
+    remote_user = ubuntu
+    private_key_file = ~/.ssh/ubuntu
+    host_key_checking = False
+    retry_files_enabled = False
+    roles_path = ./roles
+    vault_password_file = vault.key
+    
+    [diff]
+    always = True
+    context = 5
+    
+    [inventory]
+    enable_plugins = yc_compute
+
+Данный способ предполагает работу плейбуков с динамическим инвентори.
+
+</details>
