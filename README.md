@@ -930,6 +930,7 @@ backends) для окружений  stage  и  prod
 
 </details>
 
+
 <details><summary>Ansible 3</summary>
 
 **Самостоятельное задание**
