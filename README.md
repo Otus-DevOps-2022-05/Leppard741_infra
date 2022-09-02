@@ -1002,6 +1002,7 @@ backends) для окружений  stage  и  prod
 </details>
 
 
+
 <details><summary>Ansible 4 </summary>
 
 **Задание со**  ⭐: 1) Работа с Vagrant - проксирование приложения с помощью nginx
