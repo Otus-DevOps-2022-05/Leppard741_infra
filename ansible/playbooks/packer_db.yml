@@ -1,24 +1,8 @@
-- name: Install DB for Reddit
+---
+- name: Configure MongoDB
   hosts: all
   become: true
-  tasks:
-    - name: Install mongodb
-      apt:
-        name: mongodb
-        state: present
-        update_cache: yes
-      retries: 5
-      delay: 20
 
-    - name: Remove packages
-      apt:
-        autoclean: yes
+  roles:
+    - db
 
-    - name: Remove dependencies
-      apt:
-        autoremove: yes
-
-    - name: Enable
-      systemd:
-        name: mongodb
-        enabled: yes
