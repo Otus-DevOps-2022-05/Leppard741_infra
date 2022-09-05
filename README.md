@@ -1000,3 +1000,106 @@ backends) для окружений  stage  и  prod
 Данный способ предполагает работу плейбуков с динамическим инвентори.
 
 </details>
+
+
+
+<details><summary>Ansible 4 </summary>
+
+**Задание со**  ⭐: 1) Работа с Vagrant - проксирование приложения с помощью nginx
+
+Добавляем  переменную `nginx_sites` в `Vagrantfile`:
+
+      "nginx_sites" => '{"default":["listen 80", "server_name reddit", "location / { proxy_pass http://127.0.0.1:9292; }"]}'
+
+Применяем настройки, сервер приложения отвечает по порту 80.
+
+**Задание со**  ⭐: 2) Работа с Molecule - тест к роли db для проверки того, что БД слушает нужный порт 27017
+
+Добавим проверку того, что сервис БД прослушивает порт 27017 в скрипт test_default.py:
+
+    # check if MongoDB listen port 27017
+    def test_mongo_listen_port(host):
+    mongo_socket = host.socket("tcp://0.0.0.0:27017")
+    assert mongo_socket.is_listening
+    
+**Задание со**  ⭐: 3) Использовать роли db и app в плейбуках packer_db.yml и packer_app.yml
+
+Приводим файл `packer_app.yml` к следующему виду:
+
+    - name: Install base for application deploy
+      hosts: all
+      become: true
+    
+      roles:
+        - app
+
+Выполняем установку `ruby`, воспользуемся тегами и при помощи переменных окружения ansible укажем на директорию с плейбуком что бы не было ошибок, после этого получим файл `app.json` такого вида:
+
+    {
+        "variables": {
+            "mv_service_account_key_file": "",
+            "mv_folder_id": "",
+            "mv_source_image_family": ""
+        },
+        "builders": [
+            {
+                "type": "yandex",
+                "service_account_key_file": "{{user `mv_service_account_key_file`}}",
+                "folder_id": "{{user `mv_folder_id`}}",
+                "source_image_family": "{{user `mv_source_image_family`}}",
+                "image_name": "reddit-app-{{timestamp}}",
+                "image_family": "reddit-app",
+                "ssh_username": "ubuntu",
+                "platform_id": "standard-v1",
+                "use_ipv4_nat": "true"
+            }
+        ],
+        "provisioners": [
+            {
+                "type": "ansible",
+                "playbook_file": "../ansible/playbooks/packer_app.yml",
+                "extra_arguments": [ "--tags", "ruby"],
+                "ansible_env_vars": ["ANSIBLE_ROLES_PATH=../ansible/roles"]
+            }
+        ]
+    }
+
+Собираем образ и аналогично изменяем  db
+
+    packer build -var-file=variables.json  app.json
+
+
+ Аналогично изменяем  `db`. Файл `cat packer_db.yml`
+ 
+ **Задание со**  ⭐: 4) Вынести роль db в отдельный репозиторий
+
+В качестве варианта указания источника получения роли выбрано размещение на веб-сервере в архиве. 
+1 - Создаем архив роли `db`;
+2 - Создаем каталог `/tmp/webserver` и переместим туда созданный архив;
+3 - У `python` есть модуль для поднятия веб-сервера, запустим его:
+
+        > cd /tmp/webserver && python3 -m http.server
+        Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+        
+        > wget http://localhost:8000/db.tgz
+        --2022-13-13 00:00:00--  http://localhost:8000/db.tgz
+        Resolving localhost (localhost)... 127.0.0.1
+        Connecting to localhost (localhost)|127.0.0.1|:8000... connected.
+        HTTP request sent, awaiting response... 200 OK
+        Length: 3974 (3.9K) [application/x-tar]
+        Saving to: ‘db.tgz’
+    
+    db.tgz               100%[===================>]   3.88K  --.-KB/s    in 0s
+
+Делаем изменения в файл `requirements.yml`:
+
+    - src: jdauphant.nginx
+      version: v2.21.1
+    
+    - src: http://localhost:8000/db.tgz
+      name: db
+
+После чего устанавливаем зависимости:
+
+    > ansible-galaxy install -r environments/stage/requirements.yml
+</details>

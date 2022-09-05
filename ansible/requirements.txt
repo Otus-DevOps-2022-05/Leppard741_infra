@@ -1,1 +1,11 @@
 ansible>=2.4
+molecule>=2.6
+pytest-testinfra
+python-vagrant>=0.5.15
+molecule-vagrant
+
+- src: jdauphant.nginx
+  version: v2.21.1
+
+- src: http://localhost:8000/db.tgz
+  name: db
